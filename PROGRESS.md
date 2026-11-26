@@ -60,6 +60,18 @@ Diperbarui: 2026-11-26.
 6. Release GitHub, snapshot portal, GitHub Pages aktif.
 7. Sinkronisasi tiga remote dan verifikasi hash.
 
+## Rilis dan web
+
+| Item | Nilai terverifikasi |
+|---|---|
+| Tag rilis | `v0.1.0`, commit `304b762310f534c542c8c91bc6518481c8148af6` |
+| Installer | `Kinglight_0.1.0_x64-setup.exe`, 2.102.443 byte |
+| SHA-256 | `fcf8ec0aa03411d803a56d255671368bd84d162b251dcc0a1308790e5ffb4525` |
+| GitHub Release | `https://github.com/zzdevxx/kinglight/releases/tag/v0.1.0` |
+| Portal live | `https://zzdevxx.github.io/kinglight-download/` |
+| Hash Unduhan | installer yang diunduh ulang dari GitHub Release memiliki SHA-256 sama dengan lokal dan portal |
+| Sinkronisasi | HEAD lokal sama dengan `origin`, `codeberg`, `github` untuk kedua repo |
+
 ## Aturan progres
 
 Tahap tidak ditandai selesai sebelum perintah verifikasi benar-benar dijalankan dan hasilnya dicatat di sini. Tidak ada klaim performa tanpa pengukuran.
