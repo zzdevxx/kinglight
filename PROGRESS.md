@@ -4,7 +4,7 @@ Diperbarui: 2026-11-26.
 
 ## Bukti remake v0.2.0
 
-Status: rilis v0.2.0 sudah diterbitkan dari commit `90cccb67b3dc3504926fbb1c2b6673c0af0b3b46`. Metadata portal dibuat dari dua aset yang sudah diunduh ulang dan diverifikasi. Commit pembaruan metadata sumber, commit portal, sinkronisasi tiga remote, dan deploy masih tertunda.
+Status: rilis v0.2.0 diterbitkan dari commit `90cccb67b3dc3504926fbb1c2b6673c0af0b3b46`. Kedua repo tersinkron ke tiga remote. GitHub Pages live dan metadata serta hash aset terverifikasi.
 
 | Pengujian | Hasil teramati |
 |---|---|
@@ -21,6 +21,8 @@ Status: rilis v0.2.0 sudah diterbitkan dari commit `90cccb67b3dc3504926fbb1c2b66
 | GitHub Release | `https://github.com/zzdevxx/kinglight/releases/tag/v0.2.0`, dipublikasikan `2026-11-26T06:18:17Z`, tag menunjuk commit build |
 | Installer NSIS | 2.126.488 byte; SHA-256 `8166f838dcf283ba17e36a034dca5fc1f45a62582d2eb2f52a30e32b5a9e88eb` |
 | Portable ZIP | 2.382.842 byte; SHA-256 `3f18c8e324bf919b50443f11110c3c59663efcc4ed44cdec05115c64c7a7f357` |
+| Sinkronisasi | HEAD kedua repo sama di GitLab, Codeberg, dan GitHub; tag `v0.2.0` menunjuk commit build |
+| Portal live | Verifier lulus sembilan pemeriksaan; browser menampilkan v0.2.0, dua unduhan, screenshot asli, dan tanpa error console |
 
 Batas bukti: Art-Net hanya diuji ke receiver lokal, bukan node fisik. Installer belum dipasang pada sesi ini karena terdapat instalasi uji v0.1.0 terdaftar. Installer tidak ditandatangani. Tidak ada kredensial atau output ke fixture fisik yang digunakan.
 
@@ -30,7 +32,7 @@ Status: implementasi dan pengujian lokal selesai. Pemilik meminta tampilan mengi
 
 Koreksi yang ditemukan saat review: pemetaan fader harus relatif terhadap fixture pilihan, nilai encoder tidak boleh dikalikan dua kali, pergantian resolusi tidak boleh membuat mask programmer, dan input repeat harus mengubah satuan display ke nilai internal. Menu, warna tombol dan susunan strip ditinjau terhadap frame video.
 
-Tes kalibrasi panggung: lima tes lulus. Generator metadata diuji dengan dua artefak fixture dalam direktori sementara; ukuran dan SHA-256 keduanya cocok. Build ulang dari commit dan unduhan aset rilis tetap menjadi gerbang sebelum publikasi.
+Tes kalibrasi panggung: lima tes lulus. Generator metadata diuji dengan dua artefak fixture dalam direktori sementara; ukuran dan SHA-256 keduanya cocok. Build ulang, unduhan aset rilis, dan verifikasi portal live selesai.
 
 ## Riwayat rilis awal
 
@@ -80,14 +82,14 @@ Tes kalibrasi panggung: lima tes lulus. Generator metadata diuji dengan dua arte
 | Commit source, lalu build dan smoke dari commit yang sama | lulus, commit `90cccb6` |
 | Unggah dan ukur installer serta ZIP portable di GitHub Release | lulus, unduhan ulang cocok ukuran dan hash |
 | Buat metadata portal dari aset yang diunduh dan diverifikasi | lulus lokal, snapshot `v0.2.0` |
-| Commit metadata producer dan portal, sinkronkan tiga remote, verifikasi GitHub Pages | masih tertunda |
+| Commit metadata producer dan portal, sinkronkan tiga remote, verifikasi GitHub Pages | selesai |
 
-## Gerbang publikasi yang tersisa
+## Hasil publikasi
 
-1. Commit snapshot producer yang menunjuk source commit build `90cccb6`.
-2. Jalankan tes portal dan periksa tampilan, tautan, ukuran, serta hash pada snapshot `v0.2.0`.
-3. Commit portal, sinkronkan kedua repo ke tiga remote dengan tool workspace, lalu dorong tag `v0.2.0` ke remote yang belum memilikinya.
-4. Verifikasi HEAD dan tag ketiga remote. Pastikan GitHub Pages live memuat screenshot, metadata, dan hash aset yang sama.
+1. Snapshot producer menunjuk source commit build `90cccb6`; snapshot portal berasal dari aset yang diunduh ulang.
+2. Tes portal lulus 27 pemeriksaan. Browser lokal dan live memverifikasi layout, screenshot, CTA, tombol salin hash, dan console.
+3. Sinkronisasi menyamakan HEAD kedua repo pada `origin`, `codeberg`, dan `github`. Tag `v0.2.0` tersedia di ketiganya dan menunjuk commit build.
+4. GitHub Pages menampilkan v0.2.0. Skrip verifikasi live mengonfirmasi halaman, schema, ukuran, dan SHA-256 kedua aset.
 
 ## Rilis awal dan web
 

@@ -1,6 +1,6 @@
 # Handoff Kinglight
 
-Diperbarui 2026-11-26. Remake v0.2.0, build dari commit sumber, pengujian native, dan GitHub Release selesai. Snapshot metadata sudah dibuat dari aset terverifikasi. Commit snapshot producer, commit portal, sinkronisasi tiga remote, dan verifikasi GitHub Pages masih tertunda.
+Diperbarui 2026-11-26. Remake v0.2.0 selesai, dirilis, dan disinkronkan ke tiga remote. Portal live menampilkan metadata dan aset yang terverifikasi. Art-Net hanya diuji ke receiver lokal; node fisik belum diuji. Installer tidak ditandatangani.
 
 ## Arah yang ditetapkan pemilik
 
@@ -18,6 +18,6 @@ Perubahan hanya di dua repo Kinglight. ZZLUXORA dan referensi lain tetap read-on
 
 [DESIGN.md](DESIGN.md) menjelaskan remake. [PROGRESS.md](PROGRESS.md) menyimpan bukti pengujian. [docs/IPC-CONTRACT.md](docs/IPC-CONTRACT.md) menjadi kontrak implementasi. PRD, blueprint dan roadmap awal menyimpan konteks proposal; keputusan yang sudah diambil di sini menggantikan daftar persetujuan tertunda di dokumen awal.
 
-## Verifikasi sebelum rilis
+## Verifikasi rilis v0.2.0
 
-Tes Rust, frontend, portal, dan operasi native sudah dijalankan. Sebelum menutup rilis, build ulang Tauri dari commit sumber, unggah serta unduh kembali dua artefak, cocokkan ukuran dan hash, buat snapshot portal, jalankan tes portal dan verifikasi live. Setelah itu sinkronkan ketiga remote dan cocokkan HEAD serta tag.
+Build Tauri berasal dari commit `90cccb67b3dc3504926fbb1c2b6673c0af0b3b46`. Tes Rust, frontend, portal, native UI, dan Art-Net loopback lulus. Unduhan ulang installer dan portable ZIP cocok ukuran serta SHA-256 dengan snapshot. HEAD kedua repo sama di GitLab, Codeberg, dan GitHub; tag `v0.2.0` menunjuk commit build di ketiga remote. Verifier portal live lulus seluruh pemeriksaan.
