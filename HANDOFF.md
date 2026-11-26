@@ -1,6 +1,6 @@
 # Handoff Kinglight
 
-Diperbarui 2026-11-26. Remake v0.2.0 selesai dan sudah diuji lokal. Build ulang dari commit rilis, publikasi GitHub Release, metadata portal, sinkronisasi tiga remote, dan verifikasi deploy masih berjalan.
+Diperbarui 2026-11-26. Remake v0.2.0, build dari commit sumber, pengujian native, dan GitHub Release selesai. Snapshot metadata sudah dibuat dari aset terverifikasi. Commit snapshot producer, commit portal, sinkronisasi tiga remote, dan verifikasi GitHub Pages masih tertunda.
 
 ## Arah yang ditetapkan pemilik
 

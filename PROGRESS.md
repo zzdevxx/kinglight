@@ -4,7 +4,7 @@ Diperbarui: 2026-11-26.
 
 ## Bukti remake v0.2.0
 
-Status: tes sumber dan portal lulus. Rilis v0.2.0, metadata portal, commit, sinkronisasi cloud, dan deploy belum dilakukan.
+Status: rilis v0.2.0 sudah diterbitkan dari commit `90cccb67b3dc3504926fbb1c2b6673c0af0b3b46`. Metadata portal dibuat dari dua aset yang sudah diunduh ulang dan diverifikasi. Commit pembaruan metadata sumber, commit portal, sinkronisasi tiga remote, dan deploy masih tertunda.
 
 | Pengujian | Hasil teramati |
 |---|---|
@@ -18,6 +18,9 @@ Status: tes sumber dan portal lulus. Rilis v0.2.0, metadata portal, commit, sink
 | Art-Net loopback | 11 paket ArtDmx, masing-masing 530 byte; sequence 1..11 berurutan, Port-Address 1, output disarmed sesudah Stop Output dan tidak ada paket lanjutan |
 | Portal | 27 tes lulus; render lokal 320, 375, 768, 1024, 1440, 1920 px tanpa overflow; screenshot 1440x810 dimuat dan fallback tersembunyi; console error 0 |
 | Preview | Fan pada startup diukur dan dipersempit terhadap frame awal video; screenshot aplikasi aktual tersedia di portal |
+| GitHub Release | `https://github.com/zzdevxx/kinglight/releases/tag/v0.2.0`, dipublikasikan `2026-11-26T06:18:17Z`, tag menunjuk commit build |
+| Installer NSIS | 2.126.488 byte; SHA-256 `8166f838dcf283ba17e36a034dca5fc1f45a62582d2eb2f52a30e32b5a9e88eb` |
+| Portable ZIP | 2.382.842 byte; SHA-256 `3f18c8e324bf919b50443f11110c3c59663efcc4ed44cdec05115c64c7a7f357` |
 
 Batas bukti: Art-Net hanya diuji ke receiver lokal, bukan node fisik. Installer belum dipasang pada sesi ini karena terdapat instalasi uji v0.1.0 terdaftar. Installer tidak ditandatangani. Tidak ada kredensial atau output ke fixture fisik yang digunakan.
 
@@ -74,19 +77,17 @@ Tes kalibrasi panggung: lima tes lulus. Generator metadata diuji dengan dua arte
 | Tahap | Status |
 |---|---|
 | Tes ulang Rust, frontend dan portal | lulus |
-| Commit source, lalu build dan smoke dari commit yang sama | berikutnya |
-| Unggah dan ukur installer serta ZIP portable di GitHub Release | menunggu build akhir |
-| Buat metadata portal dari aset yang diunduh dan diverifikasi | setelah aset rilis tersedia |
-| Commit portal, sinkronkan tiga remote, verifikasi GitHub Pages | setelah metadata lulus tes |
+| Commit source, lalu build dan smoke dari commit yang sama | lulus, commit `90cccb6` |
+| Unggah dan ukur installer serta ZIP portable di GitHub Release | lulus, unduhan ulang cocok ukuran dan hash |
+| Buat metadata portal dari aset yang diunduh dan diverifikasi | lulus lokal, snapshot `v0.2.0` |
+| Commit metadata producer dan portal, sinkronkan tiga remote, verifikasi GitHub Pages | masih tertunda |
 
 ## Gerbang publikasi yang tersisa
 
-1. Build Tauri dan uji executable dari commit source yang dicatat.
-2. Uji ulang UI dan Art-Net loopback pada executable final; output harus berhenti setelah Stop Output.
-3. Terbitkan dua artefak dengan nama v0.2.0 yang unik dan verifikasi unduhan, ukuran, serta SHA-256.
-4. Buat snapshot release portal dari artefak terverifikasi, lalu jalankan semua tes portal.
-5. Commit portal, sinkronkan kedua repo ke tiga remote, dan verifikasi HEAD serta tag.
-6. Pastikan GitHub Pages live menampilkan metadata serta hash unduhan yang sama.
+1. Commit snapshot producer yang menunjuk source commit build `90cccb6`.
+2. Jalankan tes portal dan periksa tampilan, tautan, ukuran, serta hash pada snapshot `v0.2.0`.
+3. Commit portal, sinkronkan kedua repo ke tiga remote dengan tool workspace, lalu dorong tag `v0.2.0` ke remote yang belum memilikinya.
+4. Verifikasi HEAD dan tag ketiga remote. Pastikan GitHub Pages live memuat screenshot, metadata, dan hash aset yang sama.
 
 ## Rilis awal dan web
 
