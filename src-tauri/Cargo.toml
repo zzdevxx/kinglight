@@ -1,6 +1,6 @@
 [package]
 name = "kinglight"
-version = "0.1.0"
+version = "0.2.0"
 description = "Kinglight desktop console and Art-Net output engine"
 authors = ["zzdevxx"]
 edition = "2024"

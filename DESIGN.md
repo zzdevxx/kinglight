@@ -1,61 +1,39 @@
-# Arah desain Kinglight
+# Desain simulator Kinglight
 
-Status: proposal berdasarkan video pemilik, belum desain final yang disetujui.
+Arahan pemilik 2026-11-26: remake mengikuti video acuan, bukan memperluas tampilan menjadi dashboard teknis.
 
-Design Read: konsol desktop untuk operator lighting, dengan panel instrumen yang padat dan stage preview gelap; ENERGY 1 / RHYTHM 1 / MOTION 1 untuk chrome aplikasi.
+## Acuan dan koreksi
 
-Gerakan beam adalah isi show, bukan animasi dekoratif. Motion dial tidak membatasi playback fixture; `Pause Preview` harus tersedia dan tidak menghentikan output.
+Frame 00:03 memperlihatkan konsol biru dengan master dan 16 fader dalam satu baris, selector page di atas, serta display dan encoder di kanan. Frame 00:06 sampai 00:51 memperlihatkan display compact di kiri panggung. Menu shape berpindah di dalam display yang sama. Panggung hitam dan beam putih mendominasi tampilan.
 
-## Identitas dan komposisi
-
-- Pusat perhatian adalah stage preview serta nilai channel yang sedang diedit. Panel fader tetap dikenali sebagai bank konsol 16 strip.
-- Gunakan panel console, viewport, dan display konteks yang dapat di-dock/diperbesar. Tampilan penuh dan compact mengikuti operasi video, bukan dashboard statistik.
-- Motif identitas adalah strip bernomor, marker posisi fader, dan pembacaan 8/16-bit yang sejajar. Nomor fixture, channel, page dan playback memiliki label yang membedakannya.
-- Teks `Kinglight` menjadi identitas sementara. Logo, ikon aplikasi, favicon dan aset promosi menunggu arahan pemilik.
-- Jangan menyalin logo, skin atau aset `VE Project`. Label fungsi konsol dipakai untuk menjelaskan operasi, dengan copy Kinglight sendiri.
-
-## Keputusan visual proposal
-
-| Elemen | Arah | Alasan |
+| Tampilan awal | Remake | Tujuan |
 |---|---|---|
-| Stage | Latar gelap netral | Bentuk dan intensitas relatif beam mudah terlihat dan tidak menambah silau saat latihan |
-| Panel | Charcoal dengan panel navy redup | Membedakan kontrol dari stage sambil mempertahankan hubungan dengan referensi konsol biru |
-| Aksen utama | Amber terkontrol | Menandai parameter/seleksi aktif tanpa menyamarkannya sebagai warna output lampu |
-| Status merah | Blackout/error yang benar-benar aktif | Operator mengenali keadaan yang memengaruhi output |
-| Tipografi | Sans sistem Windows, angka tabular; monospace hanya pada nilai DMX | Label ringkas tetap terbaca; angka tidak menggeser posisi saat berubah |
-| Geometri | Border 1 px, radius kecil pada kontrol | Bank fader padat tetap tegas; rotary encoder bulat karena fungsinya |
-| Spasi | Rapat di dalam strip, lebih lega di antara kelompok operasi | Mengurangi jarak gerak pointer sambil mempertahankan kelompok fungsi |
-| Motion chrome | Feedback tekan/fokus singkat | Membantu mengetahui kontrol yang diterima tanpa mengganggu pembacaan beam |
+| Stage, konsol, display, monitor DMX dan show tampil bersamaan | Panggung dengan konsol overlay; detail teknis dibuka saat dibutuhkan | Mengikuti susunan yang terlihat dalam video |
+| Fader dan encoder terpisah menjadi blok vertikal | Master dan 16 strip sejajar; encoder berada tepat di bawah display | Menjaga hubungan fisik antarkontrol |
+| Form shape panjang dengan tombol Apply terpisah | Menu bertingkat dan empat bidang parameter pada display | Memakai urutan operasi yang terlihat pada video |
+| Dua baris fixture di atas lantai grid | Satu baris fixture menghadap penonton pada latar hitam | Menampilkan kipas dan persilangan beam seperti acuan |
 
-Warna final dan kontras belum diuji karena UI belum dibuat. Jangan menandai rancangan ini sebagai lulus WCAG sebelum render, kalkulasi kontras dan pengoperasian diuji.
+## Susunan
 
-## Permukaan utama
+Mode penuh memakai panel biru di kiri bawah. Bagian fader memuat Fixture/Playback, channel bank, page 1 sampai 6, grup A sampai D, tombol unit, blackout, nilai channel, track dan tombol bawah strip. Bagian kanan memuat display, Exit/Record/Enter/Clear dan dua encoder. Mode compact menyembunyikan bagian fader, mempertahankan display, action keys dan encoder.
 
-1. Stage: camera orbit/preset, posisi fixture, Pause Preview, kualitas, dan label preview indikatif.
-2. Console: Fixture/Playback, channel page, grup A-D, unit 1-16, bank fader, master.
-3. Display: menu, parameter, record/include, shape category, timing dan error konteks.
-4. Encoders: A/B, Normal/Fine/Ultra, nilai logis dan coarse/fine bila diperlukan.
-5. Output bar: disarmed/armed/blackout/error, NIC, target, raw Port-Address, laju kirim terukur dan last error.
-6. Monitor/patch/show manager: detail teknis tersedia sesuai pekerjaan, bukan selalu memenuhi layar.
+Menu mengikuti label pada video: Shape Menu, Playback Shape, Tilt/Pan Shape dan Shape Parameter. Ukuran, BPM, repeat, spread, interleave dan direction dibaca dari state engine. Angka panel ditampilkan dalam satuan operator; konversi ke nilai internal tidak mengubah buffer dari frontend.
 
-## Interaksi yang harus nyata
+Toolbar ringkas memberi akses pergantian mode panel, show, Art-Net dan monitor. Tidak ada frame counter, penjelasan IPC atau formulir jaringan permanen dalam alur latihan.
 
-- Semua tombol dan fader memiliki default, hover, focus-visible, active dan disabled state. Seleksi tidak disampaikan lewat warna saja.
-- Fader mendukung drag, keyboard step, nilai numerik yang bisa diketik, serta reset yang terdefinisi. Encoder tidak mengandalkan gerakan memutar mouse sebagai satu-satunya cara.
-- Blackout dan Stop Output selalu terjangkau; shortcut dipilih agar tidak berbenturan dengan edit teks atau dialog.
-- Mode fader berubah bersama label dan indikator. Page change tidak boleh membuat nilai slider software meloncat ke channel yang salah.
-- Empty show, fixture belum dipatch, profile tidak dikenal, output invalid, load dan save gagal memiliki pesan serta tindakan pemulihan.
-- Bentuk feedback mengikuti hasil command engine. UI boleh menampilkan drag preview sementara, tetapi tidak boleh mengklaim output telah berubah sebelum acknowledgement.
-- Preview yang dijeda menampilkan label jelas ketika output masih berjalan.
+## Sistem visual
 
-## Ukuran dan aksesibilitas
+- Biru konsol dan tombol biru muda mengikuti acuan eksplisit pemilik; warna ini menggantikan proposal charcoal/amber awal.
+- Latar panggung hitam mengikuti video; putih terang dipakai untuk beam yang berasal dari state fixture.
+- Panel encoder terang, knob hitam dengan marker posisi, angka tabular dan label PAN/TILT.
+- Kontrol persegi dengan radius kecil dan border jelas. State fokus, hover, tekan, seleksi dan disabled tersedia.
+- Display padat mengikuti perangkat konsol. Batas measure prosa umum tidak diterapkan pada label instrumen pendek.
+- Motion hanya untuk feedback kontrol dan isi show. Jeda preview tidak menghentikan engine maupun output.
 
-Target desktop awal diuji pada 1366x768 dan 1920x1080, termasuk scaling Windows 125%, 150%, dan 200%. Kontrol penting tidak boleh hilang karena dock/resizing. Touch target 44 px disediakan pada mode sentuh bila mode tersebut benar-benar dibangun.
+## Batas kesetiaan
 
-Keyboard harus dapat menyelesaikan select, edit, record, clear, playback dan blackout. Focus order mengikuti kelompok konsol. Reduced motion menonaktifkan animasi chrome dan menyediakan preview yang dapat dijeda. Kontras teks normal target minimum 4,5:1, kontrol/fokus minimum 3:1, diverifikasi terhadap warna hasil render.
+Posisi, teks fungsi, warna kelompok dan alur tampilan dibandingkan dengan frame video. Source, logo dan aset VE Project tidak disalin. Formula gerakan, kalibrasi beam dan model show adalah implementasi Kinglight; video tidak menyediakan kode atau spesifikasi numeriknya. Tidak ada klaim kesetaraan firmware atau pencahayaan fisik.
 
-## Filter anti-slop
+## Verifikasi
 
-Tidak ada dekorasi glow, gradient neon, kartu statistik, testimonial, AI feature, atau tombol yang hanya tampak aktif. Warna beam datang dari show fixture, bukan aksen brand. Halaman dan kontrol ditambahkan hanya untuk pekerjaan operator yang didefinisikan dalam PRD.
-
-Delivery gate desain dijalankan setelah UI nyata dibangun: fungsi semua kontrol, lima state, keyboard, kontras, render di ukuran sasaran dan bukti click-through. Tahap dokumen hanya dapat menilai alasan desain serta kejujuran klaim.
+Uji mode penuh dan compact pada 960x600, 1366x768 dan 1920x1080. Operasikan menu shape, encoder, fader, scene, show, blackout dan output loopback. Bukti visual serta hasil tes dicatat di PROGRESS.md setelah dijalankan.

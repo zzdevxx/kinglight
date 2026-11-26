@@ -1,38 +1,38 @@
 # Kinglight
 
-Rencana aplikasi desktop untuk latihan mengoperasikan konsol lighting bergaya Kingkong 256A, melihat gerakan beam, dan mengirim DMX melalui Art-Net.
+Simulator konsol lighting untuk Windows, dengan preview beam dan output Art-Net native. Panel direkonstruksi dari video acuan pemilik: konsol biru, master dan 16 fader, enam playback page, display shape dan encoder A/B.
 
-**Status: tahap perencanaan. Aplikasi, installer, dan keluaran Art-Net belum diimplementasikan.**
+[Unduh aplikasi](https://zzdevxx.github.io/kinglight-download/) · [Rilis](https://github.com/zzdevxx/kinglight/releases/latest)
 
-## Arah produk
+## Memakai simulator
 
-- Panel dengan bank fader, tombol fixture/playback, programmer, scene, chase, shape, dan encoder pan/tilt.
-- Preview panggung dengan beam bergerak, mengikuti frame DMX akhir yang sama dengan output jaringan.
-- Engine konsol yang tetap bekerja ketika preview melambat.
-- Pengoperasian lokal tanpa akun atau layanan cloud saat memainkan show.
-- Distribusi melalui proyek pendamping [kinglight-download](https://github.com/zzdevxx/kinglight-download).
+Buka aplikasi untuk melihat panggung. Pilih unit atau grup, lalu buka **Shape > Playback Shape** untuk memilih gerakan. **Play Shape** menjalankan bentuk di preview. Mode **Compact** menyisakan display dan encoder agar panggung terlihat lebih luas. Pengaturan show dan jaringan tersedia lewat toolbar.
 
-Video referensi memperlihatkan antarmuka bertuliskan `VE Project`. Identitas, source code, dan lisensinya belum terverifikasi. Kinglight direncanakan sebagai implementasi mandiri; belum ada klaim kompatibilitas penuh dengan firmware atau format show Kingkong.
+Preview dapat digunakan tanpa perangkat lighting. Art-Net selalu mulai nonaktif; isi target jaringan dan aktifkan output secara eksplisit saat diperlukan. Blackout memadamkan intensitas sambil menahan pan, tilt dan warna. Pengujian node fisik belum dilakukan.
 
-## Dokumen rencana
+## Pengembangan
 
-| Dokumen | Isi |
-|---|---|
-| [PRD.md](PRD.md) | Sasaran, ruang lingkup, dan kriteria penerimaan |
-| [BLUEPRINT.md](BLUEPRINT.md) | Pilihan stack, batas komponen, dan keputusan yang masih terbuka |
-| [ROADMAP.md](ROADMAP.md) | Tahapan pengerjaan dan gerbang verifikasi |
-| [ERD.md](ERD.md) | Entitas showfile dan hubungan datanya |
-| [DESIGN.md](DESIGN.md) | Arah panel, preview, aksesibilitas, dan alasan visual |
-| [DOCUMENTATION.md](DOCUMENTATION.md) | Kontrak teknis dan indeks referensi |
-| [Analisis video](docs/VIDEO-ANALYSIS.md) | Temuan bertimestamp dan batas buktinya |
-| [Sumber riset](docs/SOURCES.md) | Manual, spesifikasi, dan referensi GitHub |
-| [Kontrak engine](docs/ENGINE-CONTRACT.md) | Resolusi atribut, output, dan persistensi |
-| [HANDOFF.md](HANDOFF.md) | Status dan pekerjaan sesi berikutnya |
+Stack: Tauri 2, Rust, React, TypeScript, Vite dan Three.js. Windows memerlukan WebView2. Build Rust memerlukan MSVC Build Tools; installer memakai NSIS.
 
-## Repositori
+```powershell
+npm ci
+npm test
+npm run build
+pwsh -File scripts/with-msvc.ps1 -Command "cargo test --manifest-path src-tauri/Cargo.toml"
+pwsh -File scripts/with-msvc.ps1 -Command "npm run tauri build"
+```
 
-[GitLab](https://gitlab.com/zzdevxx/kinglight) · [Codeberg](https://codeberg.org/zzdevxx/kinglight) · [GitHub](https://github.com/zzdevxx/kinglight)
+Versi ada pada `VERSION`; metadata package, Cargo dan Tauri harus sama. `scripts/make-release.mjs` menghasilkan snapshot rilis dari installer dan arsip portable yang sudah diverifikasi. Biner tidak masuk Git.
 
-Ketiga remote menyimpan riwayat Git. Sinkronisasi Git tidak otomatis menyalin installer, release assets, atau deployment portal.
+## Dokumen
 
-Lisensi distribusi kode belum dipilih. Belum ada kode pihak lain yang disalin ke proyek ini.
+- [Desain dan acuan panel](DESIGN.md)
+- [Analisis video](docs/VIDEO-ANALYSIS.md)
+- [Kontrak IPC](docs/IPC-CONTRACT.md)
+- [Dokumentasi teknis](DOCUMENTATION.md)
+- [Bukti pengujian](PROGRESS.md)
+- [Handoff](HANDOFF.md)
+
+Implementasi mandiri, tidak menggunakan source, logo atau skin VE Project. Tidak ada klaim kompatibilitas firmware Kingkong atau prediksi fotometrik. Source berlisensi [MIT](LICENSE).
+
+[GitLab](https://gitlab.com/zzdevxx/kinglight) · [Codeberg](https://codeberg.org/zzdevxx/kinglight) · [GitHub](https://github.com/zzdevxx/kinglight). Sinkronisasi Git mencakup commit dan tag, bukan aset rilis atau hosting portal.

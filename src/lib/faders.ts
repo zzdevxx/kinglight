@@ -2,21 +2,19 @@ import { clamp } from "./format";
 
 export type ConsoleMode = "fixture" | "playback";
 
+export const MASTER_ATTRIBUTE = "master";
+export const FADER_COUNT = 16;
+export const MAX_FIXTURE_CHANNEL = 8;
+export const SLOT_NUMBERS = Array.from({ length: FADER_COUNT }, (_, index) => index + 1);
+
 export interface FaderDefinition {
   key: string;
   label: string;
   attribute: string;
+  index: number;
   channel: number | null;
-}
-
-export const MASTER_ATTRIBUTE = "master";
-
-function channelLabel(channel: number): string {
-  return `CH ${String(channel).padStart(2, "0")}`;
-}
-
-function playbackLabel(slot: number): string {
-  return `PB ${String(slot).padStart(2, "0")}`;
+  slot: number | null;
+  disabled: boolean;
 }
 
 export function faderDefinitions(
@@ -28,22 +26,28 @@ export function faderDefinitions(
   const normalizedPage = Math.round(clamp(page, 1, 6));
   const firstChannel = normalizedBank === 1 ? 1 : 17;
 
-  return Array.from({ length: 16 }, (_, index) => {
+  return SLOT_NUMBERS.map((slot, index) => {
     if (mode === "fixture") {
       const channel = firstChannel + index;
+      const available = channel <= MAX_FIXTURE_CHANNEL;
       return {
         key: `channel-${channel}`,
-        label: channelLabel(channel),
-        attribute: `channel.${channel}`,
+        label: available ? String(channel).padStart(2, "0") : "-",
+        attribute: `ch${index + 1}`,
+        index,
         channel,
+        slot: null,
+        disabled: !available,
       };
     }
-    const slot = index + 1;
     return {
       key: `playback-${normalizedPage}-${slot}`,
-      label: playbackLabel(slot),
+      label: String(slot).padStart(2, "0"),
       attribute: `playback.${normalizedPage}.${slot}`,
+      index,
       channel: null,
+      slot,
+      disabled: false,
     };
   });
 }

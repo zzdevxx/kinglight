@@ -72,3 +72,22 @@ Art-Net menjadi kebutuhan karena diminta pemilik. Bukti penerimaannya nanti adal
 | Network | Arm, Stop Output, blackout, NIC, target, raw Port-Address, error |
 
 Tidak ada executable atau firmware target dalam bahan yang diberikan. Analisis biner dengan REA belum memberi bukti tambahan pada tahap ini. Bila kelak ada artifact yang sah untuk diperiksa, provenance, lisensi, dan pertanyaan analisis harus ditentukan dahulu.
+
+## Tinjauan ulang untuk remake
+
+Pemilik menolak susunan dashboard rilis awal dan meminta susunan pada video sebagai acuan langsung. Frame awal memperlihatkan mode compact, bukan konsol penuh. Panggung memenuhi frame, sedangkan display biru berada di kiri. Pada 00:03, bagian fader diperluas ke kiri display; pada 00:06, bagian tersebut kembali tersembunyi.
+
+Perkiraan geometri dari frame 1920x1080, untuk perbandingan visual, bukan hasil pengukuran perangkat asli:
+
+| Bagian | Frame | Batas piksel perkiraan |
+|---|---|---|
+| Panel compact | 00:00 | x 0 sampai 356, y 245 sampai 895 |
+| Display compact | 00:00 | x 18 sampai 331, y 258 sampai 706 |
+| Action keys | 00:00 | y 715 sampai 770 |
+| Encoder | 00:00 | y 782 sampai 874 |
+| Panel penuh | 00:03 | x 0 sampai 1532, y 245 sampai bawah frame |
+| Display pada panel penuh | 00:03 | x 1173 sampai 1510, y 258 sampai 706 |
+
+Implikasi remake: satu display dengan menu bertingkat, bukan form shape di samping panel konsol yang terpisah. Mode compact mempertahankan action keys dan kedua encoder. Preview awal memperlihatkan 12 beam putih tanpa lantai grid atau badan lampu besar. Grup unit 13 sampai 16 tetap ada pada konsol penuh.
+
+Warna biru konsol, tombol biru muda, action keys abu terang dan encoder hitam adalah karakter acuan yang dipertahankan. Teks merek dan aset video tidak disalin. Pengaturan jaringan dan manajemen file berada di luar permukaan latihan utama.

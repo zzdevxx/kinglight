@@ -43,13 +43,13 @@ impl Default for ShapeParams {
     fn default() -> Self {
         Self {
             speed: 1.0,
-            bpm: None,
-            size: 0.4,
-            spread: 0.04,
-            repeat: 1,
+            bpm: Some(6.0),
+            size: 25.0 / 255.0,
+            spread: 1.0,
+            repeat: 8,
             interleave: Interleave::None,
             direction: ShapeDirection::Left,
-            amplitude: 0.4,
+            amplitude: 0.5,
         }
     }
 }
@@ -93,6 +93,12 @@ pub struct FrameSnapshot {
     pub encoder_mode: EncoderMode,
     pub shape_kind: String,
     pub shape_playing: bool,
+    pub master: u16,
+    pub shape_params: ShapeParams,
+    pub playback_levels: [u16; 16],
+    pub recorded_slots: [bool; 16],
+    pub programmer_active: bool,
+    pub channel_values: [u8; 32],
 }
 
 #[derive(Clone, Debug)]

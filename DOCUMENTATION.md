@@ -1,6 +1,6 @@
 # Dokumentasi teknis dan batas tahap ini
 
-Status: dokumentasi perencanaan. Tidak ada perintah build/test aplikasi yang telah tersedia.
+Status: implementasi desktop Tauri 2, Rust, React dan Three.js. Dokumen proposal awal dilengkapi oleh kontrak implementasi di [docs/IPC-CONTRACT.md](docs/IPC-CONTRACT.md), [DESIGN.md](DESIGN.md) dan bukti pengujian [PROGRESS.md](PROGRESS.md).
 
 ## Kontrak yang perlu dibaca
 
@@ -49,7 +49,7 @@ Atomic save memakai temporary file dalam direktori tujuan, flush dan replace ses
 
 ## Rilis dan sinkronisasi
 
-Versi aplikasi dimiliki satu file `VERSION` yang baru dibuat saat scaffold disetujui. Tag rilis harus cocok. Kontrak sisi producer yang direncanakan adalah `docs/contracts/release.json`, dengan `schemaVersion: 1` dan field yang sama seperti snapshot [portal](https://github.com/zzdevxx/kinglight-download/blob/main/docs/RELEASE-CONTRACT.md): `status`, `version`, `tag`, `sourceCommit`, `publishedAt`, `channel`, `releaseUrl`, `notesUrl`, dan `artifacts` berisi `platform`, `arch`, `fileName`, `url`, `sizeBytes`, `sha256`. File itu belum ada dan hanya menjadi kontrak saat implementasi rilis disetujui.
+Versi aplikasi dimiliki file `VERSION`; metadata package, Cargo dan Tauri harus sama. Tag rilis harus cocok. `scripts/make-release.mjs` menulis `docs/contracts/release.json` dan snapshot portal dengan `schemaVersion: 1`. Setiap artefak memuat platform, arsitektur, nama file, URL, ukuran byte dan SHA-256. Opsi `--installer` wajib; `--portable` menambahkan arsip aplikasi tanpa installer. Metadata dibuat sesudah aset rilis dapat diunduh dan diverifikasi.
 
 Producer menghitung ukuran dan SHA-256 dari artifact nyata, lalu menghasilkan snapshot metadata untuk portal. Hash tidak membuktikan identitas penerbit; code signing/updater signing adalah kontrak tambahan jika kelak dipakai.
 
@@ -59,4 +59,4 @@ Tidak ada installer, video referensi, database runtime, dependency cache, secret
 
 Matriks pengujian ada pada [ROADMAP](ROADMAP.md). Hasil pengujian harus menyebut commit, versi toolchain, OS, GPU/receiver, perintah dan batasnya. Fake clock membuktikan semantik engine; loopback membuktikan paket lokal; pengujian node fisik diperlukan untuk klaim interoperabilitas hardware.
 
-Dokumen ini tidak menyatakan build, output jaringan, rendering, atau performa telah lulus.
+Hasil tes bukan target performa. Lihat PROGRESS.md untuk perintah yang benar-benar dijalankan dan batas bukti loopback.

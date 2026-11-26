@@ -2,7 +2,34 @@
 
 Diperbarui: 2026-11-26.
 
-## Tahap selesai
+## Bukti remake v0.2.0
+
+Status: tes sumber dan portal lulus. Rilis v0.2.0, metadata portal, commit, sinkronisasi cloud, dan deploy belum dilakukan.
+
+| Pengujian | Hasil teramati |
+|---|---|
+| `cargo test --manifest-path src-tauri/Cargo.toml` | 16 tes library dan 18 tes kontrak native lulus; 0 gagal |
+| `npm test` | 21 tes frontend lulus; 0 gagal |
+| `npm run build` | TypeScript dan Vite lulus; Vite memperingatkan bundle JavaScript setelah minifikasi melebihi 500 kB |
+| `npm run tauri build` | `kinglight.exe` dan installer NSIS Windows x64 v0.2.0 berhasil dibuat |
+| Portable ZIP | Memuat satu `kinglight.exe`; executable dijalankan langsung dari arsip yang diekstrak |
+| Smoke native | 19 pemeriksaan lulus: output awal disarmed, 12 fixture putih, fader, encoder, record/copy/move/include, show round-trip, shape, dan blackout |
+| Smoke UI native | 5 pemeriksaan lulus: compact awal, 16 fader dan master, posisi encoder Normal/Fine/Ultra, Shape Parameter, serta Play/Stop tanpa mengaktifkan output |
+| Art-Net loopback | 11 paket ArtDmx, masing-masing 530 byte; sequence 1..11 berurutan, Port-Address 1, output disarmed sesudah Stop Output dan tidak ada paket lanjutan |
+| Portal | 27 tes lulus; render lokal 320, 375, 768, 1024, 1440, 1920 px tanpa overflow; screenshot 1440x810 dimuat dan fallback tersembunyi; console error 0 |
+| Preview | Fan pada startup diukur dan dipersempit terhadap frame awal video; screenshot aplikasi aktual tersedia di portal |
+
+Batas bukti: Art-Net hanya diuji ke receiver lokal, bukan node fisik. Installer belum dipasang pada sesi ini karena terdapat instalasi uji v0.1.0 terdaftar. Installer tidak ditandatangani. Tidak ada kredensial atau output ke fixture fisik yang digunakan.
+
+## Riwayat implementasi remake
+
+Status: implementasi dan pengujian lokal selesai. Pemilik meminta tampilan mengikuti video, termasuk mode compact sebagai tampilan awal. Desain dashboard rilis awal diganti dengan konsol biru di atas panggung hitam. Portal memakai screenshot aplikasi yang benar-benar dijalankan.
+
+Koreksi yang ditemukan saat review: pemetaan fader harus relatif terhadap fixture pilihan, nilai encoder tidak boleh dikalikan dua kali, pergantian resolusi tidak boleh membuat mask programmer, dan input repeat harus mengubah satuan display ke nilai internal. Menu, warna tombol dan susunan strip ditinjau terhadap frame video.
+
+Tes kalibrasi panggung: lima tes lulus. Generator metadata diuji dengan dua artefak fixture dalam direktori sementara; ukuran dan SHA-256 keduanya cocok. Build ulang dari commit dan unduhan aset rilis tetap menjadi gerbang sebelum publikasi.
+
+## Riwayat rilis awal
 
 | Tahap | Status | Bukti |
 |---|---|---|
@@ -10,7 +37,7 @@ Diperbarui: 2026-11-26.
 | P0 repo tiga platform | selesai | commit `b6754ad` identik di GitLab, Codeberg, GitHub |
 | P1 keputusan stack | selesai | Tauri 2 + Rust + React 19 + Three.js, portal HTML/CSS/JS statis |
 | P1 toolchain | selesai | Rust 1.100, MSVC Build Tools 17.14, NSIS 3.13 |
-| P1 build installer | selesai | `Kinglight_0.1.0_x64-setup.exe`, 2.101.309 byte, build ke-2 setelah perbaikan runtime |
+| P1 build installer | selesai | `Kinglight_0.1.0_x64-setup.exe`; aset rilis final tercantum di bagian rilis awal |
 
 ## Temuan dan perbaikan
 
@@ -23,7 +50,7 @@ Diperbarui: 2026-11-26.
 | Show manager tertutup footer output | uji klik tombol Save tidak mencapai elemen | `app-shell` diubah dari grid menjadi flex column, header/notice/footer `flex: 0`, workspace `flex: 1` dengan `min-height: 0` |
 | Baris Saved shows terpotong | panel show tidak bisa di-scroll | `.show-panel` diberi `overflow-y: auto` |
 
-## Bukti pengujian aplikasi
+## Bukti pengujian rilis awal v0.1.0
 
 | Pengujian | Hasil |
 |---|---|
@@ -42,25 +69,26 @@ Diperbarui: 2026-11-26.
 | Load show | notifikasi "Show loaded." muncul setelah memilih `smoke` dan menekan Load |
 | Panel show dapat di-scroll | baris Saved shows dan tombol Load terjangkau setelah scroll |
 
-## Tahap berjalan
+## Tahap rilis v0.2.0
 
-| ID | Pekerjaan | Owner |
-|---|---|---|
-| A | Backend Rust: engine, ArtDmx, perintah Tauri, tes | agen backend |
-| B | Frontend React + Three.js, panel dan preview | agen frontend |
-| C | Portal statis dan penguji kontrak rilis | agen portal |
+| Tahap | Status |
+|---|---|
+| Tes ulang Rust, frontend dan portal | lulus |
+| Commit source, lalu build dan smoke dari commit yang sama | berikutnya |
+| Unggah dan ukur installer serta ZIP portable di GitHub Release | menunggu build akhir |
+| Buat metadata portal dari aset yang diunduh dan diverifikasi | setelah aset rilis tersedia |
+| Commit portal, sinkronkan tiga remote, verifikasi GitHub Pages | setelah metadata lulus tes |
 
-## Gerbang berikutnya
+## Gerbang publikasi yang tersisa
 
-1. `cargo test` lulus untuk packet, sequence, merge, blackout, shape, storage.
-2. `node --test` portal lulus.
-3. `npm run build` frontend lulus.
-4. `npm run tauri build` menghasilkan installer NSIS.
-5. Uji loopback ArtDmx dan klik-through UI dengan Playwright.
-6. Release GitHub, snapshot portal, GitHub Pages aktif.
-7. Sinkronisasi tiga remote dan verifikasi hash.
+1. Build Tauri dan uji executable dari commit source yang dicatat.
+2. Uji ulang UI dan Art-Net loopback pada executable final; output harus berhenti setelah Stop Output.
+3. Terbitkan dua artefak dengan nama v0.2.0 yang unik dan verifikasi unduhan, ukuran, serta SHA-256.
+4. Buat snapshot release portal dari artefak terverifikasi, lalu jalankan semua tes portal.
+5. Commit portal, sinkronkan kedua repo ke tiga remote, dan verifikasi HEAD serta tag.
+6. Pastikan GitHub Pages live menampilkan metadata serta hash unduhan yang sama.
 
-## Rilis dan web
+## Rilis awal dan web
 
 | Item | Nilai terverifikasi |
 |---|---|

@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { clamp } from "../lib/format";
+import { beamDirection, fixturePosition } from "../lib/stage";
 import type { FixtureSnapshot } from "../types";
-
-type CameraPreset = "front" | "side" | "top" | "reset";
-type Quality = "standard" | "high";
+import "./StagePreview.css";
 
 interface StagePreviewProps {
   fixtures: FixtureSnapshot[];
@@ -13,34 +11,65 @@ interface StagePreviewProps {
 }
 
 interface CameraState {
-  theta: number;
-  phi: number;
+  yaw: number;
+  pitch: number;
   radius: number;
 }
 
-const FIXTURE_COUNT = 16;
-const MOUNT_HEIGHT = 6.6;
-const DOWN = new THREE.Vector3(0, -1, 0);
+const FRONT = new THREE.Vector3(0, 0, 1);
+const CAMERA_DEFAULT: CameraState = { yaw: 0, pitch: 0.03, radius: 18 };
+const BEAM_LENGTH = 24;
+const BEAM_WIDTH = 0.88;
 
-function mountPosition(index: number): [number, number] {
-  const row = index < 8 ? 0 : 1;
-  const column = index % 8;
-  return [(column - 3.5) * 2.1, row === 0 ? -2.6 : 2.6];
+function createBeamMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      beamColor: { value: new THREE.Color(1, 1, 1) },
+      level: { value: 0 },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vView;
+      varying float vAlong;
+      void main() {
+        vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-viewPosition.xyz);
+        vAlong = position.z;
+        gl_Position = projectionMatrix * viewPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 beamColor;
+      uniform float level;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      varying float vAlong;
+      void main() {
+        float facing = abs(dot(normalize(vNormal), normalize(vView)));
+        float edge = smoothstep(0.0, 0.7, facing);
+        float haze = mix(1.0, 0.36, smoothstep(0.0, 1.0, vAlong));
+        float tail = 1.0 - smoothstep(0.82, 1.0, vAlong);
+        gl_FragColor = vec4(beamColor, level * edge * haze * tail);
+      }
+    `,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
 }
 
 export function StagePreview({ fixtures, armed, blackout }: StagePreviewProps) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const resizeRef = useRef<() => void>(() => undefined);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fixturesRef = useRef(fixtures);
   const pausedRef = useRef(false);
-  const cameraRef = useRef<CameraState>({ theta: 0, phi: 1.04, radius: 18 });
-
+  const cameraRef = useRef<CameraState>({ ...CAMERA_DEFAULT });
   const [paused, setPaused] = useState(false);
-  const [quality, setQuality] = useState<Quality>("standard");
   const [rendererError, setRendererError] = useState<string | null>(null);
-
   fixturesRef.current = fixtures;
   pausedRef.current = paused;
 
@@ -51,122 +80,41 @@ export function StagePreview({ fixtures, armed, blackout }: StagePreviewProps) {
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: true,
-        alpha: false,
-        powerPreference: "high-performance",
-      });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
     } catch (error) {
-      setRendererError(
-        error instanceof Error ? error.message : "WebGL renderer unavailable",
-      );
+      setRendererError(error instanceof Error ? error.message : "WebGL tidak tersedia.");
       return;
     }
-
-    rendererRef.current = renderer;
-    renderer.setClearColor(0x0c0f14, 1);
-    renderer.setPixelRatio(1);
-
+    renderer.setClearColor(0x000000, 1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0f14);
-    const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 200);
-    const target = new THREE.Vector3(0, 2.2, 0);
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 90);
+    const target = new THREE.Vector3(0, 1.7, -3);
 
-    const floorGeometry = new THREE.PlaneGeometry(34, 22);
-    const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0x151a21,
-      roughness: 0.94,
-      metalness: 0.02,
-    });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
+    const geometry = new THREE.ConeGeometry(1, 1, 40, 1, true);
+    geometry.translate(0, -0.5, 0);
+    geometry.rotateX(-Math.PI / 2);
+    const lampGeometry = new THREE.SphereGeometry(0.024, 8, 6);
+    const lamps: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] = [];
+    const beams: THREE.Group[] = [];
+    const materials: THREE.ShaderMaterial[] = [];
 
-    const grid = new THREE.GridHelper(34, 17, 0x2c3540, 0x1c232c);
-    grid.position.y = 0.012;
-    scene.add(grid);
-
-    scene.add(new THREE.AmbientLight(0x8ba0b8, 0.5));
-    const keyLight = new THREE.DirectionalLight(0xaebfd2, 0.7);
-    keyLight.position.set(6, 14, 9);
-    scene.add(keyLight);
-
-    const bodyGeometry = new THREE.BoxGeometry(0.42, 0.24, 0.42);
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x3c4652,
-      roughness: 0.6,
-      metalness: 0.25,
-    });
-    const bodies = new THREE.InstancedMesh(
-      bodyGeometry,
-      bodyMaterial,
-      FIXTURE_COUNT,
-    );
-    const matrix = new THREE.Matrix4();
-    for (let index = 0; index < FIXTURE_COUNT; index += 1) {
-      const [x, z] = mountPosition(index);
-      matrix.makeTranslation(x, MOUNT_HEIGHT, z);
-      bodies.setMatrixAt(index, matrix);
-    }
-    bodies.instanceMatrix.needsUpdate = true;
-    scene.add(bodies);
-
-    const beamGeometry = new THREE.ConeGeometry(0.62, 1, 20, 1, true);
-    beamGeometry.translate(0, -0.5, 0);
-    const discGeometry = new THREE.CircleGeometry(1, 28);
-
-    const beams: THREE.Mesh[] = [];
-    const discs: THREE.Mesh[] = [];
-
-    for (let index = 0; index < FIXTURE_COUNT; index += 1) {
-      const [x, z] = mountPosition(index);
-      const beamMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          uColor: { value: new THREE.Color(1, 1, 1) },
-          uOpacity: { value: 0 },
-        },
-        vertexShader: `
-          varying float vAlong;
-          void main() {
-            vAlong = clamp(-position.y, 0.0, 1.0);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColor;
-          uniform float uOpacity;
-          varying float vAlong;
-          void main() {
-            float leadIn = smoothstep(0.0, 0.14, vAlong);
-            float tail = 1.0 - 0.5 * smoothstep(0.7, 1.0, vAlong);
-            gl_FragColor = vec4(uColor, uOpacity * leadIn * tail);
-          }
-        `,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-      });
-      const beam = new THREE.Mesh(beamGeometry, beamMaterial);
-      beam.position.set(x, MOUNT_HEIGHT, z);
-      beam.visible = false;
-      beams.push(beam);
-      scene.add(beam);
-
-      const discMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-      });
-      const disc = new THREE.Mesh(discGeometry, discMaterial);
-      disc.rotation.x = -Math.PI / 2;
-      disc.visible = false;
-      discs.push(disc);
-      scene.add(disc);
+    for (let index = 0; index < 16; index += 1) {
+      const group = new THREE.Group();
+      group.position.set(...fixturePosition(index));
+      for (const width of [1, 0.72, 0.4]) {
+        const material = createBeamMaterial();
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.scale.set(BEAM_WIDTH * width, BEAM_WIDTH * width, BEAM_LENGTH);
+        group.add(mesh);
+        materials.push(material);
+      }
+      scene.add(group);
+      beams.push(group);
+      const lamp = new THREE.Mesh(lampGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
+      lamp.position.copy(group.position);
+      scene.add(lamp);
+      lamps.push(lamp);
     }
 
     const resize = () => {
@@ -176,224 +124,127 @@ export function StagePreview({ fixtures, armed, blackout }: StagePreviewProps) {
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };
-    resizeRef.current = resize;
+    const observer = new ResizeObserver(resize);
+    observer.observe(host);
     resize();
 
-    const observer =
-      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(resize);
-    observer?.observe(host);
-
-    const drag = { active: false, x: 0, y: 0, pointerId: -1 };
-    const dom = renderer.domElement;
-
+    const pointer = { id: -1, x: 0, y: 0 };
     const onPointerDown = (event: PointerEvent) => {
-      drag.active = true;
-      drag.x = event.clientX;
-      drag.y = event.clientY;
-      drag.pointerId = event.pointerId;
-      dom.setPointerCapture(event.pointerId);
+      if (event.button !== 0) return;
+      pointer.id = event.pointerId;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      canvas.setPointerCapture(event.pointerId);
     };
     const onPointerMove = (event: PointerEvent) => {
-      if (!drag.active || event.pointerId !== drag.pointerId) return;
-      const dx = event.clientX - drag.x;
-      const dy = event.clientY - drag.y;
-      drag.x = event.clientX;
-      drag.y = event.clientY;
+      if (pointer.id !== event.pointerId) return;
       const state = cameraRef.current;
-      state.theta -= dx * 0.006;
-      state.phi = clamp(state.phi + dy * 0.006, 0.18, 1.48);
+      state.yaw -= (event.clientX - pointer.x) * 0.004;
+      state.pitch = THREE.MathUtils.clamp(state.pitch + (event.clientY - pointer.y) * 0.004, -0.55, 1.2);
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
     };
     const onPointerUp = (event: PointerEvent) => {
-      if (event.pointerId !== drag.pointerId) return;
-      drag.active = false;
-      if (dom.hasPointerCapture(event.pointerId)) {
-        dom.releasePointerCapture(event.pointerId);
-      }
+      if (pointer.id !== event.pointerId) return;
+      pointer.id = -1;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     };
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const state = cameraRef.current;
-      state.radius = clamp(state.radius + event.deltaY * 0.012, 8, 34);
+      cameraRef.current.radius = THREE.MathUtils.clamp(cameraRef.current.radius + event.deltaY * 0.01, 10, 32);
     };
-
-    dom.addEventListener("pointerdown", onPointerDown);
-    dom.addEventListener("pointermove", onPointerMove);
-    dom.addEventListener("pointerup", onPointerUp);
-    dom.addEventListener("pointercancel", onPointerUp);
-    dom.addEventListener("wheel", onWheel, { passive: false });
+    let contextLost = false;
+    const onContextLost = (event: Event) => {
+      event.preventDefault();
+      contextLost = true;
+      setRendererError("Preview terhenti. Buka ulang aplikasi jika tampilan tidak kembali.");
+    };
+    const onContextRestored = () => {
+      contextLost = false;
+      setRendererError(null);
+      resize();
+    };
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", onPointerUp);
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("webglcontextlost", onContextLost);
+    canvas.addEventListener("webglcontextrestored", onContextRestored);
 
     const direction = new THREE.Vector3();
     let animationFrame = 0;
-
     const render = () => {
       animationFrame = requestAnimationFrame(render);
+      if (contextLost || pausedRef.current || document.hidden) return;
       const state = cameraRef.current;
-      const sinPhi = Math.sin(state.phi);
       camera.position.set(
-        target.x + state.radius * sinPhi * Math.sin(state.theta),
-        target.y + state.radius * Math.cos(state.phi),
-        target.z + state.radius * sinPhi * Math.cos(state.theta),
+        target.x + Math.sin(state.yaw) * Math.cos(state.pitch) * state.radius,
+        target.y + Math.sin(state.pitch) * state.radius,
+        target.z + Math.cos(state.yaw) * Math.cos(state.pitch) * state.radius,
       );
       camera.lookAt(target);
-
-      const list = fixturesRef.current;
-      for (let index = 0; index < FIXTURE_COUNT; index += 1) {
-        const fixture = list[index];
-        const beam = beams[index];
-        const disc = discs[index];
-        if (!fixture || fixture.dimmer <= 0.001) {
-          beam.visible = false;
-          disc.visible = false;
-          continue;
+      for (let index = 0; index < beams.length; index += 1) {
+        const fixture = fixturesRef.current[index];
+        const visible = Boolean(fixture && fixture.dimmer > 0.001);
+        beams[index].visible = visible;
+        lamps[index].visible = visible;
+        if (!fixture || !visible) continue;
+        direction.set(...beamDirection(fixture.pan, fixture.tilt));
+        beams[index].quaternion.setFromUnitVectors(FRONT, direction);
+        const level = THREE.MathUtils.clamp(fixture.dimmer, 0, 1);
+        for (let layer = 0; layer < 3; layer += 1) {
+          const material = materials[index * 3 + layer];
+          material.uniforms.beamColor.value.setRGB(...fixture.color);
+          material.uniforms.level.value = level * [0.12, 0.15, 0.2][layer];
         }
-
-        const level = clamp(fixture.dimmer, 0, 1);
-        const pan = (fixture.pan - 0.5) * Math.PI * 1.25;
-        const tilt = (fixture.tilt - 0.5) * Math.PI * 0.8;
-        const horizontal = Math.sin(tilt);
-        direction.set(
-          Math.sin(pan) * horizontal,
-          -Math.cos(tilt),
-          Math.cos(pan) * horizontal,
-        ).normalize();
-
-        let length = 7;
-        let hitsFloor = false;
-        if (direction.y < -0.06) {
-          length = Math.min(MOUNT_HEIGHT / -direction.y, 20);
-          hitsFloor = true;
-        }
-
-        const beamMaterial = beam.material as THREE.ShaderMaterial;
-        beamMaterial.uniforms.uColor.value.setRGB(
-          clamp(fixture.color[0] ?? 0, 0, 1),
-          clamp(fixture.color[1] ?? 0, 0, 1),
-          clamp(fixture.color[2] ?? 0, 0, 1),
-        );
-        beamMaterial.uniforms.uOpacity.value = 0.05 + level * 0.22;
-        beam.quaternion.setFromUnitVectors(DOWN, direction);
-        beam.scale.set(1, length, 1);
-        beam.visible = true;
-
-        if (hitsFloor) {
-          const discMaterial = disc.material as THREE.MeshBasicMaterial;
-          discMaterial.color.setRGB(
-            clamp(fixture.color[0] ?? 0, 0, 1),
-            clamp(fixture.color[1] ?? 0, 0, 1),
-            clamp(fixture.color[2] ?? 0, 0, 1),
-          );
-          discMaterial.opacity = 0.08 + level * 0.42;
-          disc.position.set(
-            beam.position.x + direction.x * length,
-            0.018,
-            beam.position.z + direction.z * length,
-          );
-          const radius = 0.5 + level * 0.55;
-          disc.scale.set(radius, radius, 1);
-          disc.visible = true;
-        } else {
-          disc.visible = false;
-        }
+        lamps[index].material.color.setRGB(...fixture.color);
       }
-
-      if (!pausedRef.current) renderer.render(scene, camera);
+      renderer.render(scene, camera);
     };
     render();
 
     return () => {
       cancelAnimationFrame(animationFrame);
-      observer?.disconnect();
-      dom.removeEventListener("pointerdown", onPointerDown);
-      dom.removeEventListener("pointermove", onPointerMove);
-      dom.removeEventListener("pointerup", onPointerUp);
-      dom.removeEventListener("pointercancel", onPointerUp);
-      dom.removeEventListener("wheel", onWheel);
-      beams.forEach((beam) => (beam.material as THREE.Material).dispose());
-      discs.forEach((disc) => (disc.material as THREE.Material).dispose());
-      beamGeometry.dispose();
-      discGeometry.dispose();
-      bodyGeometry.dispose();
-      bodyMaterial.dispose();
-      floorGeometry.dispose();
-      floorMaterial.dispose();
-      grid.geometry.dispose();
-      (grid.material as THREE.Material).dispose();
+      observer.disconnect();
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointercancel", onPointerUp);
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
+      materials.forEach((material) => material.dispose());
+      lamps.forEach((lamp) => lamp.material.dispose());
+      lampGeometry.dispose();
+      geometry.dispose();
       renderer.dispose();
-      rendererRef.current = null;
-      resizeRef.current = () => undefined;
     };
   }, []);
 
-  useEffect(() => {
-    const renderer = rendererRef.current;
-    if (!renderer) return;
-    const ratio = quality === "high" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-    renderer.setPixelRatio(ratio);
-    resizeRef.current();
-  }, [quality]);
-
-  const setView = (preset: CameraPreset) => {
-    const state = cameraRef.current;
-    if (preset === "side") {
-      state.theta = Math.PI / 2;
-      state.phi = 1.04;
-      state.radius = 18;
-    } else if (preset === "top") {
-      state.theta = 0;
-      state.phi = 0.2;
-      state.radius = 21;
-    } else {
-      state.theta = 0;
-      state.phi = 1.04;
-      state.radius = 18;
-    }
-  };
-
   return (
-    <section className="panel stage-panel" aria-labelledby="stage-title">
-      <div className="panel-head">
-        <div>
-          <h2 id="stage-title" className="panel-title">Stage preview</h2>
-          <p className="panel-sub">Frame-driven beams. Drag to orbit, wheel to zoom.</p>
-        </div>
-        <div className="stage-tools">
-          <button type="button" className="btn" onClick={() => setView("front")}>Front</button>
-          <button type="button" className="btn" onClick={() => setView("side")}>Side</button>
-          <button type="button" className="btn" onClick={() => setView("top")}>Top</button>
-          <button type="button" className="btn" onClick={() => setView("reset")}>Reset</button>
-          <button
-            type="button"
-            className="btn"
-            aria-pressed={quality === "high"}
-            onClick={() => setQuality((current) => (current === "high" ? "standard" : "high"))}
-          >
-            Quality: {quality === "high" ? "High" : "Standard"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            aria-pressed={paused}
-            onClick={() => setPaused((current) => !current)}
-          >
-            {paused ? "Resume Preview" : "Pause Preview"}
-          </button>
-        </div>
-      </div>
-
+    <section className="stage-panel" aria-label="Panggung simulator">
       <div className="stage-surface" ref={hostRef}>
-        <canvas ref={canvasRef} className="stage-canvas" aria-label="Stage preview" />
-        {blackout ? <div className="stage-flag stage-flag-danger">Blackout active</div> : null}
-        {paused ? (
-          <div className="stage-flag" role="status">
-            {armed ? "Preview paused. Output continues." : "Preview paused. Output remains disarmed."}
-          </div>
-        ) : null}
-        {rendererError ? (
-          <div className="stage-fallback" role="alert">
-            Stage renderer could not start: {rendererError}
-          </div>
-        ) : null}
+        <canvas ref={canvasRef} className="stage-canvas" aria-label="Preview beam lighting" />
       </div>
+      <details className="stage-view-menu">
+        <summary>Tampilan</summary>
+        <div className="stage-view-options">
+          <button type="button" onClick={() => { cameraRef.current = { ...CAMERA_DEFAULT }; }}>Depan</button>
+          <button type="button" onClick={() => { cameraRef.current = { yaw: 0.9, pitch: 0.28, radius: 20 }; }}>Samping</button>
+          <button type="button" onClick={() => { cameraRef.current = { yaw: 0, pitch: 1.1, radius: 22 }; }}>Atas</button>
+          <button type="button" aria-pressed={paused} onClick={() => setPaused((value) => !value)}>
+            {paused ? "Lanjutkan preview" : "Jeda preview"}
+          </button>
+        </div>
+      </details>
+      {blackout || paused ? (
+        <div className={`stage-state-flag${blackout ? " stage-state-blackout" : ""}`}>
+          {blackout ? "BLACK OUT" : ""}{blackout && paused ? " / " : ""}
+          {paused ? `Preview dijeda${armed ? ". Art-Net tetap mengirim." : ""}` : ""}
+        </div>
+      ) : null}
+      {rendererError ? <p className="stage-render-error" role="alert">{rendererError}</p> : null}
     </section>
   );
 }

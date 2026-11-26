@@ -32,8 +32,21 @@ export const commands = {
   setFader: (attribute: string, value: number) =>
     invoke<FrameSnapshot>("set_fader", { attribute, value }),
 
+  setPlayback: (slot: number, value: number) =>
+    invoke<FrameSnapshot>("set_playback", { slot, value }),
+
+  consoleAction: (action: string, slot?: number, source?: number) =>
+    invoke<FrameSnapshot>("console_action", {
+      action,
+      slot: slot ?? null,
+      source: source ?? null,
+    }),
+
   setEncoder: (axis: "a" | "b", delta: number, mode: EncoderMode) =>
     invoke<FrameSnapshot>("set_encoder", { axis, delta, mode }),
+
+  setEncoderMode: (mode: EncoderMode) =>
+    invoke<FrameSnapshot>("set_encoder", { axis: "a", delta: 0, mode }),
 
   setShape: (kind: string, params: ShapeParams) =>
     invoke<FrameSnapshot>("set_shape", { kind, params }),

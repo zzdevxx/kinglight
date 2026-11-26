@@ -3,10 +3,10 @@ use std::sync::Arc;
 use tauri::ipc::Channel;
 use tauri::State;
 
-use crate::engine::{EngineState, FrameBundle, validate_shape_kind, validate_shape_params};
+use crate::engine::{EngineState, FrameBundle};
 use crate::model::{EncoderMode, FrameSnapshot, ShapeParams};
 use crate::storage;
-use crate::{FIXTURE_COUNT, Runtime};
+use crate::Runtime;
 
 async fn mutate<F>(state: &State<'_, Arc<Runtime>>, change: F) -> Result<FrameSnapshot, String>
 where
@@ -35,65 +35,22 @@ pub async fn select_fixture(
     state: State<'_, Arc<Runtime>>,
     slot: u8,
 ) -> Result<FrameSnapshot, String> {
-    if slot == 0 || slot as usize > FIXTURE_COUNT {
-        return Err("INVALID_FIXTURE_SLOT: slot harus 1 sampai 16".to_string());
-    }
-    mutate(&state, move |engine| {
-        let index = slot as usize - 1;
-        engine.fixtures[index].selected = !engine.fixtures[index].selected;
-        Ok(())
-    })
-    .await
+    mutate(&state, move |engine| engine.toggle_fixture(slot)).await
 }
 
 #[tauri::command]
-pub async fn set_group(
-    state: State<'_, Arc<Runtime>>,
-    group: u8,
-) -> Result<FrameSnapshot, String> {
-    if group > 4 {
-        return Err("INVALID_GROUP: group harus 0 sampai 4".to_string());
-    }
-    mutate(&state, move |engine| {
-        engine.active_group = group;
-        for fixture in &mut engine.fixtures {
-            fixture.selected = false;
-        }
-        if group > 0 {
-            let start = (group as usize - 1) * 4;
-            for fixture in &mut engine.fixtures[start..start + 4] {
-                fixture.selected = true;
-            }
-        }
-        Ok(())
-    })
-    .await
+pub async fn set_group(state: State<'_, Arc<Runtime>>, group: u8) -> Result<FrameSnapshot, String> {
+    mutate(&state, move |engine| engine.set_group(group)).await
 }
 
 #[tauri::command]
 pub async fn set_page(state: State<'_, Arc<Runtime>>, page: u8) -> Result<FrameSnapshot, String> {
-    if page == 0 || page > 6 {
-        return Err("INVALID_PAGE: page harus 1 sampai 6".to_string());
-    }
-    mutate(&state, move |engine| {
-        engine.active_page = page;
-        let revision = engine.revisions.iter().copied().max().unwrap_or(0) + 1;
-        engine.revisions[page as usize - 1] = revision;
-        Ok(())
-    })
-    .await
+    mutate(&state, move |engine| engine.set_page(page)).await
 }
 
 #[tauri::command]
 pub async fn set_bank(state: State<'_, Arc<Runtime>>, bank: u8) -> Result<FrameSnapshot, String> {
-    if bank == 0 || bank > 2 {
-        return Err("INVALID_BANK: bank harus 1 atau 2".to_string());
-    }
-    mutate(&state, move |engine| {
-        engine.channel_bank = bank;
-        Ok(())
-    })
-    .await
+    mutate(&state, move |engine| engine.set_bank(bank)).await
 }
 
 #[tauri::command]
@@ -102,22 +59,8 @@ pub async fn set_fader(
     attribute: String,
     value: u16,
 ) -> Result<FrameSnapshot, String> {
-    let normalized = attribute.to_ascii_lowercase().replace(['_', '-'], "");
     mutate(&state, move |engine| {
-        let indices = engine.target_indices();
-        match normalized.as_str() {
-            "master" => engine.master = value,
-            "pancoarse" => engine.set_fine_byte(&indices, crate::engine::Attribute::Pan, true, value),
-            "panfine" => engine.set_fine_byte(&indices, crate::engine::Attribute::Pan, false, value),
-            "tiltcoarse" => engine.set_fine_byte(&indices, crate::engine::Attribute::Tilt, true, value),
-            "tiltfine" => engine.set_fine_byte(&indices, crate::engine::Attribute::Tilt, false, value),
-            name => {
-                let parsed = crate::engine::Attribute::parse(name)
-                    .ok_or_else(|| format!("INVALID_ATTRIBUTE: atribut {attribute} tidak dikenal"))?;
-                engine.set_programmer(&indices, parsed, value);
-            }
-        }
-        Ok(())
+        engine.set_fader_attribute(&attribute, value)
     })
     .await
 }
@@ -129,32 +72,7 @@ pub async fn set_encoder(
     delta: i32,
     mode: EncoderMode,
 ) -> Result<FrameSnapshot, String> {
-    let normalized = axis.to_ascii_lowercase();
-    if normalized != "a" && normalized != "b" {
-        return Err("INVALID_ENCODER_AXIS: axis harus a atau b".to_string());
-    }
-    mutate(&state, move |engine| {
-        engine.encoder_mode = mode;
-        let step = match mode {
-            EncoderMode::Normal => 2048i64,
-            EncoderMode::Fine => 256i64,
-            EncoderMode::Ultra => 16i64,
-        };
-        let attribute = if normalized == "a" {
-            crate::engine::Attribute::Pan
-        } else {
-            crate::engine::Attribute::Tilt
-        };
-        let indices = engine.target_indices();
-        for index in indices {
-            let current = engine.fixtures[index].programmer[attribute.index()]
-                .unwrap_or(engine.fixtures[index].values[attribute.index()]);
-            let next = (current as i64 + delta as i64 * step).clamp(0, u16::MAX as i64) as u16;
-            engine.fixtures[index].programmer[attribute.index()] = Some(next);
-        }
-        Ok(())
-    })
-    .await
+    mutate(&state, move |engine| engine.encoder_tick(&axis, delta, mode)).await
 }
 
 #[tauri::command]
@@ -163,15 +81,7 @@ pub async fn set_shape(
     kind: String,
     params: ShapeParams,
 ) -> Result<FrameSnapshot, String> {
-    validate_shape_kind(&kind)?;
-    let params = validate_shape_params(&params)?;
-    mutate(&state, move |engine| {
-        engine.shape.kind = kind;
-        engine.shape.params = params;
-        engine.shape.phase_ms = 0;
-        Ok(())
-    })
-    .await
+    mutate(&state, move |engine| engine.apply_shape(&kind, params)).await
 }
 
 #[tauri::command]
@@ -180,10 +90,7 @@ pub async fn shape_play(
     active: bool,
 ) -> Result<FrameSnapshot, String> {
     mutate(&state, move |engine| {
-        if active && !engine.shape.playing {
-            engine.shape.phase_ms = 0;
-        }
-        engine.shape.playing = active;
+        engine.shape_play(active);
         Ok(())
     })
     .await
@@ -195,18 +102,7 @@ pub async fn set_blackout(
     active: bool,
 ) -> Result<FrameSnapshot, String> {
     mutate(&state, move |engine| {
-        if active && !engine.blackout {
-            let values = engine.resolved_values(false);
-            engine.latch = Some(crate::engine::BlackoutLatch {
-                pan: values.iter().map(|value| value.pan).collect(),
-                tilt: values.iter().map(|value| value.tilt).collect(),
-                color: values.iter().map(|value| value.color).collect(),
-            });
-        }
-        if !active {
-            engine.latch = None;
-        }
-        engine.blackout = active;
+        engine.set_blackout(active);
         Ok(())
     })
     .await
@@ -218,10 +114,29 @@ pub async fn set_playing(
     active: bool,
 ) -> Result<FrameSnapshot, String> {
     mutate(&state, move |engine| {
-        engine.playing = active;
+        engine.set_playing(active);
         Ok(())
     })
     .await
+}
+
+#[tauri::command]
+pub async fn console_action(
+    state: State<'_, Arc<Runtime>>,
+    action: String,
+    slot: Option<u8>,
+    source: Option<u8>,
+) -> Result<FrameSnapshot, String> {
+    mutate(&state, move |engine| engine.console_action(&action, slot, source)).await
+}
+
+#[tauri::command]
+pub async fn set_playback(
+    state: State<'_, Arc<Runtime>>,
+    slot: u8,
+    value: u16,
+) -> Result<FrameSnapshot, String> {
+    mutate(&state, move |engine| engine.set_playback(slot, value)).await
 }
 
 #[tauri::command]

@@ -176,6 +176,8 @@ pub fn run() {
             commands::shape_play,
             commands::set_blackout,
             commands::set_playing,
+            commands::console_action,
+            commands::set_playback,
             commands::configure_output,
             commands::arm_output,
             commands::stop_output,

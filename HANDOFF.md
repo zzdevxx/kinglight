@@ -1,27 +1,23 @@
 # Handoff Kinglight
 
-Tanggal: 2026-11-26. Tahap: P0, draf perencanaan.
+Diperbarui 2026-11-26. Remake v0.2.0 selesai dan sudah diuji lokal. Build ulang dari commit rilis, publikasi GitHub Release, metadata portal, sinkronisasi tiga remote, dan verifikasi deploy masih berjalan.
 
-## Otorisasi dan batas
+## Arah yang ditetapkan pemilik
 
-- Pemilik meminta Kinglight desktop bergaya video Kingkong 256A, dengan output Art-Net, serta portal kinglight-download yang terhubung.
-- Pemilik memilih dua repo publik pada GitLab, Codeberg, GitHub dan anti-slop DURING.
-- Belum ada persetujuan stack, instalasi toolchain, implementasi aplikasi, pengiriman ke node fisik atau deployment situs.
-- Pembuatan dua repo publik dan sinkronisasi dokumentasi ke tiga remote diotorisasi pada sesi ini.
-- Repo referensi lain tidak boleh diubah; ada pekerjaan aktif di ZZLUXORA.
+- Simulator mengikuti panel pada video lokal: konsol biru, master dan 16 fader sejajar, display konteks, dua encoder, menu shape bertingkat, mode penuh dan compact.
+- Panggung hitam dengan kipas beam putih menjadi tampilan utama. Pengaturan show, DMX dan Art-Net dibuka sesuai kebutuhan.
+- Portal dirombak dengan identitas berbeda dari Banklycs dan ZZLUXORA, responsif, memakai screenshot aplikasi asli dan metadata rilis nyata.
+- Stack desktop Tauri 2 + Rust + React + Three.js, portal HTML/CSS/JS statis, lisensi MIT.
+- Build, pengujian lokal, rilis baru, deploy portal, commit dan sinkronisasi tiga remote telah diotorisasi.
 
-## Hasil fase dokumen
+## Batas tetap
 
-PRD, arsitektur, desain, model show, kontrak engine, analisis video, sumber dan roadmap tersedia. Portal memiliki rencana dan release contract sendiri. Dokumen tetap proposal sampai tinjauan pemilik.
+Perubahan hanya di dua repo Kinglight. ZZLUXORA dan referensi lain tetap read-only. Tidak ada pengiriman ke node fisik. Output mulai disarmed; preview tidak mengirim UDP atau memiliki buffer show alternatif. Video, capture lokal, installer dan cache tidak masuk Git.
 
-Temuan utama: video 54,33 detik pada 1080p/30 fps menunjukkan panel VE Project, 16 unit button, enam page selector dan preview beam. Manual KK-256 berbeda: 12 fixture dan lima page. Jangan menyatakan video telah membuktikan emulasi hardware identik.
+## Dokumen aktif
 
-## Langkah berikutnya
+[DESIGN.md](DESIGN.md) menjelaskan remake. [PROGRESS.md](PROGRESS.md) menyimpan bukti pengujian. [docs/IPC-CONTRACT.md](docs/IPC-CONTRACT.md) menjadi kontrak implementasi. PRD, blueprint dan roadmap awal menyimpan konteks proposal; keputusan yang sudah diambil di sini menggantikan daftar persetujuan tertunda di dokumen awal.
 
-1. Tinjau `PRD.md`, `BLUEPRINT.md`, `ROADMAP.md` bersama pemilik.
-2. Pilih Tauri/Rust/Three.js dan frontend, atau PySide6/GPU; pilih stack portal.
-3. Tentukan profil enam page software, fixture pertama, target node, dan lisensi.
-4. Mulai P1: pembuktian 12 beam dan output loopback pada aplikasi minimal, bukan seluruh panel sekaligus.
-5. Catat angka benchmark nyata sebelum mengunci budget P2.
+## Verifikasi sebelum rilis
 
-Video dan frame ekstraksi tetap di penyimpanan lokal riset dan tidak disertakan dalam repo publik. Lihat provenance dan hash pada `docs/VIDEO-ANALYSIS.md`.
+Tes Rust, frontend, portal, dan operasi native sudah dijalankan. Sebelum menutup rilis, build ulang Tauri dari commit sumber, unggah serta unduh kembali dua artefak, cocokkan ukuran dan hash, buat snapshot portal, jalankan tes portal dan verifikasi live. Setelah itu sinkronkan ketiga remote dan cocokkan HEAD serta tag.

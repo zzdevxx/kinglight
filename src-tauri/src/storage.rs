@@ -26,11 +26,19 @@ pub struct StoredFixture {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StoredCueFixture {
+    pub values: [u16; 6],
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StoredSlot {
     pub dimmer: u16,
     pub pan: u16,
     pub tilt: u16,
     pub color: [u16; 3],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fixtures: Option<Vec<StoredCueFixture>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -38,6 +46,12 @@ pub struct StoredSlot {
 pub struct StoredShape {
     pub kind: String,
     pub params: ShapeParams,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StoredProgrammer {
+    pub values: [Option<u16>; 6],
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -51,6 +65,12 @@ pub struct ShowDocument {
     pub fixtures: Vec<StoredFixture>,
     pub pages: Vec<Vec<StoredSlot>>,
     pub shape: StoredShape,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub programmer: Option<Vec<StoredProgrammer>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recorded_slots: Option<Vec<Vec<bool>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub playback_levels: Option<Vec<Vec<u16>>>,
 }
 
 pub fn validate_show_name(name: &str) -> Result<String, String> {
@@ -169,9 +189,31 @@ pub fn validate_document(document: &ShowDocument) -> Result<(), String> {
         if page.len() != 16 {
             return Err("INVALID_SHOW: page harus memiliki 16 slot".to_string());
         }
+        for slot in page {
+            if let Some(fixtures) = &slot.fixtures {
+                if fixtures.len() != 16 {
+                    return Err("INVALID_SHOW: cue harus memiliki 16 fixture".to_string());
+                }
+            }
+        }
     }
     validate_shape_kind(&document.shape.kind)?;
     validate_shape_params(&document.shape.params)?;
+    if let Some(programmer) = &document.programmer {
+        if programmer.len() != 16 {
+            return Err("INVALID_SHOW: jumlah programmer fixture bukan 16".to_string());
+        }
+    }
+    if let Some(recorded) = &document.recorded_slots {
+        if recorded.len() != 6 || recorded.iter().any(|page| page.len() != 16) {
+            return Err("INVALID_SHOW: struktur recordedSlots tidak valid".to_string());
+        }
+    }
+    if let Some(levels) = &document.playback_levels {
+        if levels.len() != 6 || levels.iter().any(|page| page.len() != 16) {
+            return Err("INVALID_SHOW: struktur playbackLevels tidak valid".to_string());
+        }
+    }
     Ok(())
 }
 

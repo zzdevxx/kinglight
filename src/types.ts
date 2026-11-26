@@ -33,6 +33,12 @@ export interface FrameSnapshot {
   encoderMode: EncoderMode;
   shapeKind: string;
   shapePlaying: boolean;
+  master: number;
+  shapeParams: ShapeParams;
+  playbackLevels: number[];
+  recordedSlots: boolean[];
+  programmerActive: boolean;
+  channelValues: number[];
 }
 
 export type ShapeInterleave = "none" | "even" | "odd";
@@ -58,9 +64,17 @@ export const SHAPE_KINDS = [
   "Diamond",
   "PanSwing",
   "TiltSwing",
+  "Dimmer",
+  "RGB",
+  "Color",
 ] as const;
 
 export type ShapeKind = (typeof SHAPE_KINDS)[number];
+
+export const SHAPE_CATEGORIES = ["Tilt/Pan", "Dimmer", "RGB", "Color"] as const;
+export type ShapeCategory = (typeof SHAPE_CATEGORIES)[number];
+
+export type ConsoleSlotAction = "record" | "include" | "copy" | "move" | "delete";
 
 export type RunCommand = <T>(
   key: string,
